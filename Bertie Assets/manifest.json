@@ -1,0 +1,64 @@
+{
+  "project": "Bertie Assets",
+  "description": "10-part puppet rigging assets with bone and joint definitions",
+  "created": "2025-06-17",
+  "structure": {
+    "bones": {
+      "description": "Cut puppet parts with anchor hole processing",
+      "files": [
+        "annotated_part_08.png",
+        "annotated_part_09.png",
+        "main_part_01_precise.png",
+        "main_anchor_holes_marked.png",
+        "annotated_part_07_precise.png",
+        "main_part_08_precise.png",
+        "annotated_anchor_holes_marked.png",
+        "annotated_part_02_precise.png",
+        "main_part_04_precise.png",
+        "annotated_part_08_precise.png",
+        "main_part_07_precise.png",
+        "main_part_03.png",
+        "main_part_02.png",
+        "annotated_part_01_precise.png",
+        "main_part_01.png",
+        "main_part_05.png",
+        "annotated_part_04_precise.png",
+        "main_part_10.png",
+        "main_part_04.png",
+        "main_part_02_precise.png",
+        "main_part_06.png",
+        "main_part_07.png",
+        "main_part_05_precise.png",
+        "main_anchor_holes_processed.png",
+        "main_part_09.png",
+        "annotated_part_03_precise.png",
+        "main_part_08.png",
+        "main_part_10_precise.png",
+        "annotated_part_06_precise.png",
+        "annotated_anchor_holes_processed.png",
+        "main_part_09_precise.png",
+        "annotated_part_10_precise.png",
+        "annotated_part_01.png",
+        "main_part_03_precise.png",
+        "annotated_part_02.png",
+        "annotated_part_03.png",
+        "annotated_part_05_precise.png",
+        "annotated_part_07.png",
+        "annotated_part_06.png",
+        "annotated_part_10.png",
+        "annotated_part_04.png",
+        "annotated_part_05.png",
+        "annotated_part_09_precise.png",
+        "main_part_06_precise.png"
+      ]
+    },
+    "joints": {
+      "description": "Joint definitions and assembly instructions",
+      "files": [
+        "joint_definitions.json",
+        "assembly_instructions.json",
+        "bone_mapping.json"
+      ]
+    }
+  }
+}

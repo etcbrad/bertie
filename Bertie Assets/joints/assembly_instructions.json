@@ -1,0 +1,100 @@
+{
+  "title": "Bertie Puppet Assembly",
+  "description": "10-part puppet with feet attached to legs, no hands",
+  "parts": [
+    {
+      "id": 1,
+      "name": "Head",
+      "file": "part_01",
+      "connections": [
+        "neck"
+      ]
+    },
+    {
+      "id": 2,
+      "name": "Torso",
+      "file": "part_02",
+      "connections": [
+        "neck",
+        "left_shoulder",
+        "right_shoulder",
+        "left_hip",
+        "right_hip"
+      ]
+    },
+    {
+      "id": 3,
+      "name": "Right Upper Arm",
+      "file": "part_03",
+      "connections": [
+        "right_shoulder",
+        "right_elbow"
+      ]
+    },
+    {
+      "id": 4,
+      "name": "Right Lower Arm",
+      "file": "part_04",
+      "connections": [
+        "right_elbow"
+      ]
+    },
+    {
+      "id": 5,
+      "name": "Left Upper Arm",
+      "file": "part_05",
+      "connections": [
+        "left_shoulder",
+        "left_elbow"
+      ]
+    },
+    {
+      "id": 6,
+      "name": "Left Lower Arm",
+      "file": "part_06",
+      "connections": [
+        "left_elbow"
+      ]
+    },
+    {
+      "id": 7,
+      "name": "Right Upper Leg",
+      "file": "part_07",
+      "connections": [
+        "right_hip",
+        "right_knee"
+      ]
+    },
+    {
+      "id": 8,
+      "name": "Right Lower Leg + Foot",
+      "file": "part_08",
+      "connections": [
+        "right_knee"
+      ]
+    },
+    {
+      "id": 9,
+      "name": "Left Upper Leg",
+      "file": "part_09",
+      "connections": [
+        "left_hip",
+        "left_knee"
+      ]
+    },
+    {
+      "id": 10,
+      "name": "Left Lower Leg + Foot",
+      "file": "part_10",
+      "connections": [
+        "left_knee"
+      ]
+    }
+  ],
+  "notes": [
+    "Feet are attached to lower leg segments (parts 8 and 10)",
+    "No hand segments - arms end at lower arm (parts 4 and 6)",
+    "Anchor holes should be cleared of paper material",
+    "Preserve any ink that impedes anchor holes for structural integrity"
+  ]
+}

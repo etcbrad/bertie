@@ -1,0 +1,200 @@
+{
+  "neck": {
+    "connects": [
+      "head",
+      "torso"
+    ],
+    "type": "ball",
+    "rotation_limits": {
+      "x": [
+        -45,
+        45
+      ],
+      "y": [
+        -30,
+        30
+      ],
+      "z": [
+        -30,
+        30
+      ]
+    },
+    "anchor_hole": true
+  },
+  "left_shoulder": {
+    "connects": [
+      "torso",
+      "left_upper_arm"
+    ],
+    "type": "ball",
+    "rotation_limits": {
+      "x": [
+        -180,
+        180
+      ],
+      "y": [
+        -90,
+        90
+      ],
+      "z": [
+        -180,
+        180
+      ]
+    },
+    "anchor_hole": true
+  },
+  "left_elbow": {
+    "connects": [
+      "left_upper_arm",
+      "left_lower_arm"
+    ],
+    "type": "hinge",
+    "rotation_limits": {
+      "x": [
+        0,
+        150
+      ],
+      "y": [
+        0,
+        0
+      ],
+      "z": [
+        0,
+        0
+      ]
+    },
+    "anchor_hole": true
+  },
+  "right_shoulder": {
+    "connects": [
+      "torso",
+      "right_upper_arm"
+    ],
+    "type": "ball",
+    "rotation_limits": {
+      "x": [
+        -180,
+        180
+      ],
+      "y": [
+        -90,
+        90
+      ],
+      "z": [
+        -180,
+        180
+      ]
+    },
+    "anchor_hole": true
+  },
+  "right_elbow": {
+    "connects": [
+      "right_upper_arm",
+      "right_lower_arm"
+    ],
+    "type": "hinge",
+    "rotation_limits": {
+      "x": [
+        0,
+        150
+      ],
+      "y": [
+        0,
+        0
+      ],
+      "z": [
+        0,
+        0
+      ]
+    },
+    "anchor_hole": true
+  },
+  "left_hip": {
+    "connects": [
+      "torso",
+      "left_upper_leg"
+    ],
+    "type": "ball",
+    "rotation_limits": {
+      "x": [
+        -120,
+        45
+      ],
+      "y": [
+        -30,
+        30
+      ],
+      "z": [
+        -45,
+        45
+      ]
+    },
+    "anchor_hole": true
+  },
+  "left_knee": {
+    "connects": [
+      "left_upper_leg",
+      "left_lower_leg"
+    ],
+    "type": "hinge",
+    "rotation_limits": {
+      "x": [
+        0,
+        150
+      ],
+      "y": [
+        0,
+        0
+      ],
+      "z": [
+        0,
+        0
+      ]
+    },
+    "anchor_hole": true
+  },
+  "right_hip": {
+    "connects": [
+      "torso",
+      "right_upper_leg"
+    ],
+    "type": "ball",
+    "rotation_limits": {
+      "x": [
+        -120,
+        45
+      ],
+      "y": [
+        -30,
+        30
+      ],
+      "z": [
+        -45,
+        45
+      ]
+    },
+    "anchor_hole": true
+  },
+  "right_knee": {
+    "connects": [
+      "right_upper_leg",
+      "right_lower_leg"
+    ],
+    "type": "hinge",
+    "rotation_limits": {
+      "x": [
+        0,
+        150
+      ],
+      "y": [
+        0,
+        0
+      ],
+      "z": [
+        0,
+        0
+      ]
+    },
+    "anchor_hole": true
+  }
+}

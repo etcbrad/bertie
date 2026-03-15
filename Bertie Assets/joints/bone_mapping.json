@@ -1,0 +1,42 @@
+{
+  "part_01": {
+    "name": "head",
+    "type": "body_part"
+  },
+  "part_02": {
+    "name": "torso",
+    "type": "body_part"
+  },
+  "part_03": {
+    "name": "right_upper_arm",
+    "type": "arm_segment"
+  },
+  "part_04": {
+    "name": "right_lower_arm",
+    "type": "arm_segment"
+  },
+  "part_05": {
+    "name": "left_upper_arm",
+    "type": "arm_segment"
+  },
+  "part_06": {
+    "name": "left_lower_arm",
+    "type": "arm_segment"
+  },
+  "part_07": {
+    "name": "right_upper_leg",
+    "type": "leg_segment"
+  },
+  "part_08": {
+    "name": "right_lower_leg_with_foot",
+    "type": "leg_segment"
+  },
+  "part_09": {
+    "name": "left_upper_leg",
+    "type": "leg_segment"
+  },
+  "part_10": {
+    "name": "left_lower_leg_with_foot",
+    "type": "leg_segment"
+  }
+}
