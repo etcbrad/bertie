@@ -1,0 +1,106 @@
+[
+  {
+    "type": "pageerror",
+    "text": "ReferenceError: ikBodyMode is not defined"
+  },
+  {
+    "type": "console.error",
+    "text": "Error in solveFK: Error: Invalid root position or angle\n    at Chain.solveFK (http://localhost:5173/canvas.html:1076:15)\n    at Puppet.solve (http://localhost:5173/canvas.html:1225:96)\n    at rebuildPuppet (http://localhost:5173/canvas.html:1667:22)\n    at applyGeom (http://localhost:5173/canvas.html:1585:16)\n    at snapToCenter (http://localhost:5173/canvas.html:1589:3)\n    at http://localhost:5173/canvas.html:1609:39"
+  },
+  {
+    "type": "console.error",
+    "text": "Error in solveFK: Error: Invalid root position or angle\n    at Chain.solveFK (http://localhost:5173/canvas.html:1076:15)\n    at Chain.solveFK (http://localhost:5173/canvas.html:1098:19)\n    at Puppet.solve (http://localhost:5173/canvas.html:1225:96)\n    at rebuildPuppet (http://localhost:5173/canvas.html:1667:22)\n    at applyGeom (http://localhost:5173/canvas.html:1585:16)\n    at snapToCenter (http://localhost:5173/canvas.html:1589:3)\n    at http://localhost:5173/canvas.html:1609:39"
+  },
+  {
+    "type": "console.error",
+    "text": "Error in solveFK: Error: Invalid root position or angle\n    at Chain.solveFK (http://localhost:5173/canvas.html:1076:15)\n    at Chain.solveFK (http://localhost:5173/canvas.html:1098:19)\n    at Chain.solveFK (http://localhost:5173/canvas.html:1098:19)\n    at Puppet.solve (http://localhost:5173/canvas.html:1225:96)\n    at rebuildPuppet (http://localhost:5173/canvas.html:1667:22)\n    at applyGeom (http://localhost:5173/canvas.html:1585:16)\n    at snapToCenter (http://localhost:5173/canvas.html:1589:3)\n    at http://localhost:5173/canvas.html:1609:39"
+  },
+  {
+    "type": "console.error",
+    "text": "Error in solveFK: Error: Invalid root position or angle\n    at Chain.solveFK (http://localhost:5173/canvas.html:1076:15)\n    at Chain.solveFK (http://localhost:5173/canvas.html:1098:19)\n    at Chain.solveFK (http://localhost:5173/canvas.html:1098:19)\n    at Chain.solveFK (http://localhost:5173/canvas.html:1098:19)\n    at Puppet.solve (http://localhost:5173/canvas.html:1225:96)\n    at rebuildPuppet (http://localhost:5173/canvas.html:1667:22)\n    at applyGeom (http://localhost:5173/canvas.html:1585:16)\n    at snapToCenter (http://localhost:5173/canvas.html:1589:3)\n    at http://localhost:5173/canvas.html:1609:39"
+  },
+  {
+    "type": "console.error",
+    "text": "Error in solveFK: Error: Invalid root position or angle\n    at Chain.solveFK (http://localhost:5173/canvas.html:1076:15)\n    at Chain.solveFK (http://localhost:5173/canvas.html:1098:19)\n    at Chain.solveFK (http://localhost:5173/canvas.html:1098:19)\n    at Chain.solveFK (http://localhost:5173/canvas.html:1098:19)\n    at Chain.solveFK (http://localhost:5173/canvas.html:1098:19)\n    at Puppet.solve (http://localhost:5173/canvas.html:1225:96)\n    at rebuildPuppet (http://localhost:5173/canvas.html:1667:22)\n    at applyGeom (http://localhost:5173/canvas.html:1585:16)\n    at snapToCenter (http://localhost:5173/canvas.html:1589:3)\n    at http://localhost:5173/canvas.html:1609:39"
+  },
+  {
+    "type": "console.error",
+    "text": "Error in solveFK: Error: Invalid root position or angle\n    at Chain.solveFK (http://localhost:5173/canvas.html:1076:15)\n    at Chain.solveFK (http://localhost:5173/canvas.html:1098:19)\n    at Chain.solveFK (http://localhost:5173/canvas.html:1098:19)\n    at Chain.solveFK (http://localhost:5173/canvas.html:1098:19)\n    at Chain.solveFK (http://localhost:5173/canvas.html:1098:19)\n    at Chain.solveFK (http://localhost:5173/canvas.html:1098:19)\n    at Puppet.solve (http://localhost:5173/canvas.html:1225:96)\n    at rebuildPuppet (http://localhost:5173/canvas.html:1667:22)\n    at applyGeom (http://localhost:5173/canvas.html:1585:16)\n    at snapToCenter (http://localhost:5173/canvas.html:1589:3)"
+  },
+  {
+    "type": "console.error",
+    "text": "Error in solveFK: Error: Invalid root position or angle\n    at Chain.solveFK (http://localhost:5173/canvas.html:1076:15)\n    at Chain.solveFK (http://localhost:5173/canvas.html:1098:19)\n    at Chain.solveFK (http://localhost:5173/canvas.html:1098:19)\n    at Chain.solveFK (http://localhost:5173/canvas.html:1098:19)\n    at Chain.solveFK (http://localhost:5173/canvas.html:1098:19)\n    at Chain.solveFK (http://localhost:5173/canvas.html:1098:19)\n    at Chain.solveFK (http://localhost:5173/canvas.html:1098:19)\n    at Puppet.solve (http://localhost:5173/canvas.html:1225:96)\n    at rebuildPuppet (http://localhost:5173/canvas.html:1667:22)\n    at applyGeom (http://localhost:5173/canvas.html:1585:16)"
+  },
+  {
+    "type": "console.error",
+    "text": "Error in solveFK: Error: Invalid root position or angle\n    at Chain.solveFK (http://localhost:5173/canvas.html:1076:15)\n    at Chain.solveFK (http://localhost:5173/canvas.html:1098:19)\n    at Chain.solveFK (http://localhost:5173/canvas.html:1098:19)\n    at Chain.solveFK (http://localhost:5173/canvas.html:1098:19)\n    at Chain.solveFK (http://localhost:5173/canvas.html:1098:19)\n    at Chain.solveFK (http://localhost:5173/canvas.html:1098:19)\n    at Chain.solveFK (http://localhost:5173/canvas.html:1098:19)\n    at Chain.solveFK (http://localhost:5173/canvas.html:1098:19)\n    at Puppet.solve (http://localhost:5173/canvas.html:1225:96)\n    at rebuildPuppet (http://localhost:5173/canvas.html:1667:22)"
+  },
+  {
+    "type": "console.error",
+    "text": "Error in solveFK: Error: Invalid root position or angle\n    at Chain.solveFK (http://localhost:5173/canvas.html:1076:15)\n    at Chain.solveFK (http://localhost:5173/canvas.html:1098:19)\n    at Chain.solveFK (http://localhost:5173/canvas.html:1098:19)\n    at Chain.solveFK (http://localhost:5173/canvas.html:1098:19)\n    at Chain.solveFK (http://localhost:5173/canvas.html:1098:19)\n    at Chain.solveFK (http://localhost:5173/canvas.html:1098:19)\n    at Chain.solveFK (http://localhost:5173/canvas.html:1098:19)\n    at Chain.solveFK (http://localhost:5173/canvas.html:1098:19)\n    at Chain.solveFK (http://localhost:5173/canvas.html:1098:19)\n    at Puppet.solve (http://localhost:5173/canvas.html:1225:96)"
+  },
+  {
+    "type": "console.error",
+    "text": "Error in solveFK: Error: Invalid root position or angle\n    at Chain.solveFK (http://localhost:5173/canvas.html:1076:15)\n    at Chain.solveFK (http://localhost:5173/canvas.html:1098:19)\n    at Chain.solveFK (http://localhost:5173/canvas.html:1098:19)\n    at Chain.solveFK (http://localhost:5173/canvas.html:1098:19)\n    at Chain.solveFK (http://localhost:5173/canvas.html:1098:19)\n    at Chain.solveFK (http://localhost:5173/canvas.html:1098:19)\n    at Chain.solveFK (http://localhost:5173/canvas.html:1098:19)\n    at Chain.solveFK (http://localhost:5173/canvas.html:1098:19)\n    at Chain.solveFK (http://localhost:5173/canvas.html:1098:19)\n    at Chain.solveFK (http://localhost:5173/canvas.html:1098:19)"
+  },
+  {
+    "type": "console.error",
+    "text": "Error in solveFK: Error: Invalid root position or angle"
+  },
+  {
+    "type": "pageerror",
+    "text": "RangeError: Maximum call stack size exceeded"
+  },
+  {
+    "type": "console.error",
+    "text": "Error in solveFK: Error: Invalid root position or angle\n    at Chain.solveFK (http://localhost:5173/canvas.html:1076:15)\n    at Puppet.solve (http://localhost:5173/canvas.html:1225:96)\n    at rebuildPuppet (http://localhost:5173/canvas.html:1667:22)\n    at applyGeom (http://localhost:5173/canvas.html:1585:16)\n    at snapToCenter (http://localhost:5173/canvas.html:1589:3)\n    at http://localhost:5173/canvas.html:1610:49\n    at eval (eval at evaluate (:290:30), <anonymous>:2:12)\n    at UtilityScript.evaluate (<anonymous>:292:16)\n    at UtilityScript.<anonymous> (<anonymous>:1:44)"
+  },
+  {
+    "type": "console.error",
+    "text": "Error in solveFK: Error: Invalid root position or angle\n    at Chain.solveFK (http://localhost:5173/canvas.html:1076:15)\n    at Chain.solveFK (http://localhost:5173/canvas.html:1098:19)\n    at Puppet.solve (http://localhost:5173/canvas.html:1225:96)\n    at rebuildPuppet (http://localhost:5173/canvas.html:1667:22)\n    at applyGeom (http://localhost:5173/canvas.html:1585:16)\n    at snapToCenter (http://localhost:5173/canvas.html:1589:3)\n    at http://localhost:5173/canvas.html:1610:49\n    at eval (eval at evaluate (:290:30), <anonymous>:2:12)\n    at UtilityScript.evaluate (<anonymous>:292:16)\n    at UtilityScript.<anonymous> (<anonymous>:1:44)"
+  },
+  {
+    "type": "console.error",
+    "text": "Error in solveFK: Error: Invalid root position or angle\n    at Chain.solveFK (http://localhost:5173/canvas.html:1076:15)\n    at Chain.solveFK (http://localhost:5173/canvas.html:1098:19)\n    at Chain.solveFK (http://localhost:5173/canvas.html:1098:19)\n    at Puppet.solve (http://localhost:5173/canvas.html:1225:96)\n    at rebuildPuppet (http://localhost:5173/canvas.html:1667:22)\n    at applyGeom (http://localhost:5173/canvas.html:1585:16)\n    at snapToCenter (http://localhost:5173/canvas.html:1589:3)\n    at http://localhost:5173/canvas.html:1610:49\n    at eval (eval at evaluate (:290:30), <anonymous>:2:12)\n    at UtilityScript.evaluate (<anonymous>:292:16)"
+  },
+  {
+    "type": "console.error",
+    "text": "Error in solveFK: Error: Invalid root position or angle\n    at Chain.solveFK (http://localhost:5173/canvas.html:1076:15)\n    at Chain.solveFK (http://localhost:5173/canvas.html:1098:19)\n    at Chain.solveFK (http://localhost:5173/canvas.html:1098:19)\n    at Chain.solveFK (http://localhost:5173/canvas.html:1098:19)\n    at Puppet.solve (http://localhost:5173/canvas.html:1225:96)\n    at rebuildPuppet (http://localhost:5173/canvas.html:1667:22)\n    at applyGeom (http://localhost:5173/canvas.html:1585:16)\n    at snapToCenter (http://localhost:5173/canvas.html:1589:3)\n    at http://localhost:5173/canvas.html:1610:49\n    at eval (eval at evaluate (:290:30), <anonymous>:2:12)"
+  },
+  {
+    "type": "console.error",
+    "text": "Error in solveFK: Error: Invalid root position or angle\n    at Chain.solveFK (http://localhost:5173/canvas.html:1076:15)\n    at Chain.solveFK (http://localhost:5173/canvas.html:1098:19)\n    at Chain.solveFK (http://localhost:5173/canvas.html:1098:19)\n    at Chain.solveFK (http://localhost:5173/canvas.html:1098:19)\n    at Chain.solveFK (http://localhost:5173/canvas.html:1098:19)\n    at Puppet.solve (http://localhost:5173/canvas.html:1225:96)\n    at rebuildPuppet (http://localhost:5173/canvas.html:1667:22)\n    at applyGeom (http://localhost:5173/canvas.html:1585:16)\n    at snapToCenter (http://localhost:5173/canvas.html:1589:3)\n    at http://localhost:5173/canvas.html:1610:49"
+  },
+  {
+    "type": "console.error",
+    "text": "Error in solveFK: Error: Invalid root position or angle\n    at Chain.solveFK (http://localhost:5173/canvas.html:1076:15)\n    at Puppet.solve (http://localhost:5173/canvas.html:1225:96)\n    at rebuildPuppet (http://localhost:5173/canvas.html:1667:22)\n    at _syncAndBuild (http://localhost:5173/canvas.html:1603:18)\n    at <anonymous>:32:9"
+  },
+  {
+    "type": "console.error",
+    "text": "Error in solveFK: Error: Invalid root position or angle\n    at Chain.solveFK (http://localhost:5173/canvas.html:1076:15)\n    at Chain.solveFK (http://localhost:5173/canvas.html:1098:19)\n    at Puppet.solve (http://localhost:5173/canvas.html:1225:96)\n    at rebuildPuppet (http://localhost:5173/canvas.html:1667:22)\n    at _syncAndBuild (http://localhost:5173/canvas.html:1603:18)\n    at <anonymous>:32:9"
+  },
+  {
+    "type": "console.error",
+    "text": "Error in solveFK: Error: Invalid root position or angle\n    at Chain.solveFK (http://localhost:5173/canvas.html:1076:15)\n    at Chain.solveFK (http://localhost:5173/canvas.html:1098:19)\n    at Chain.solveFK (http://localhost:5173/canvas.html:1098:19)\n    at Puppet.solve (http://localhost:5173/canvas.html:1225:96)\n    at rebuildPuppet (http://localhost:5173/canvas.html:1667:22)\n    at _syncAndBuild (http://localhost:5173/canvas.html:1603:18)\n    at <anonymous>:32:9"
+  },
+  {
+    "type": "console.error",
+    "text": "Error in solveFK: Error: Invalid root position or angle\n    at Chain.solveFK (http://localhost:5173/canvas.html:1076:15)\n    at Chain.solveFK (http://localhost:5173/canvas.html:1098:19)\n    at Chain.solveFK (http://localhost:5173/canvas.html:1098:19)\n    at Chain.solveFK (http://localhost:5173/canvas.html:1098:19)\n    at Puppet.solve (http://localhost:5173/canvas.html:1225:96)\n    at rebuildPuppet (http://localhost:5173/canvas.html:1667:22)\n    at _syncAndBuild (http://localhost:5173/canvas.html:1603:18)\n    at <anonymous>:32:9"
+  },
+  {
+    "type": "console.error",
+    "text": "Error in solveFK: Error: Invalid root position or angle\n    at Chain.solveFK (http://localhost:5173/canvas.html:1076:15)\n    at Chain.solveFK (http://localhost:5173/canvas.html:1098:19)\n    at Chain.solveFK (http://localhost:5173/canvas.html:1098:19)\n    at Chain.solveFK (http://localhost:5173/canvas.html:1098:19)\n    at Chain.solveFK (http://localhost:5173/canvas.html:1098:19)\n    at Puppet.solve (http://localhost:5173/canvas.html:1225:96)\n    at rebuildPuppet (http://localhost:5173/canvas.html:1667:22)\n    at _syncAndBuild (http://localhost:5173/canvas.html:1603:18)\n    at <anonymous>:32:9"
+  },
+  {
+    "type": "console.error",
+    "text": "Error in solveFK: Error: Invalid root position or angle\n    at Chain.solveFK (http://localhost:5173/canvas.html:1076:15)\n    at Chain.solveFK (http://localhost:5173/canvas.html:1098:19)\n    at Chain.solveFK (http://localhost:5173/canvas.html:1098:19)\n    at Chain.solveFK (http://localhost:5173/canvas.html:1098:19)\n    at Chain.solveFK (http://localhost:5173/canvas.html:1098:19)\n    at Chain.solveFK (http://localhost:5173/canvas.html:1098:19)\n    at Puppet.solve (http://localhost:5173/canvas.html:1225:96)\n    at rebuildPuppet (http://localhost:5173/canvas.html:1667:22)\n    at _syncAndBuild (http://localhost:5173/canvas.html:1603:18)\n    at <anonymous>:32:9"
+  },
+  {
+    "type": "console.error",
+    "text": "Error in solveFK: Error: Invalid root position or angle\n    at Chain.solveFK (http://localhost:5173/canvas.html:1076:15)\n    at Chain.solveFK (http://localhost:5173/canvas.html:1098:19)\n    at Chain.solveFK (http://localhost:5173/canvas.html:1098:19)\n    at Chain.solveFK (http://localhost:5173/canvas.html:1098:19)\n    at Chain.solveFK (http://localhost:5173/canvas.html:1098:19)\n    at Chain.solveFK (http://localhost:5173/canvas.html:1098:19)\n    at Chain.solveFK (http://localhost:5173/canvas.html:1098:19)\n    at Puppet.solve (http://localhost:5173/canvas.html:1225:96)\n    at rebuildPuppet (http://localhost:5173/canvas.html:1667:22)\n    at _syncAndBuild (http://localhost:5173/canvas.html:1603:18)"
+  },
+  {
+    "type": "console.error",
+    "text": "Failed to load resource: the server responded with a status of 404 (File not found)"
+  }
+]
