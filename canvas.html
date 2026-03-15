@@ -226,6 +226,9 @@ html,body{width:100%;height:100%;background:#070609;overflow:hidden;font-family:
 .ms-flip{font-family:'Courier New',monospace;font-size:9px;
   color:#8ecfa8;background:#1a2e24;border:1px solid #3d6e52;padding:1px 5px;cursor:pointer}
 .ms-flip:hover{color:#b8f0cc;border-color:#52a070}
+.ms-anc{font-family:'Courier New',monospace;font-size:9px;
+  color:#8ecfa8;background:#1a2e24;border:1px solid #3d6e52;padding:1px 5px;cursor:pointer}
+.ms-anc:hover{color:#b8f0cc;border-color:#52a070}
 #btn-msk{
   display:flex;flex-direction:column;align-items:center;gap:3px;justify-content:center;
   cursor:pointer;background:#1a2e24;border:1px solid #3d6e52;padding:8px 10px;
@@ -2714,6 +2717,7 @@ document.addEventListener('mouseup',()=>{
 // ══ MASK SYSTEM ══════════════════════════════════════════════════════════════
 const masks   = {};
 let   selMask = null;
+let   anchorPick = null;
 
 const maskCvs = document.createElement('canvas');
 maskCvs.width  = stage.offsetWidth  || 1;
@@ -2753,17 +2757,60 @@ const MASK_SLOTS = [
   {key:'lLeg:1',  label:'L Shin+foot',  tag:'leftLeg',  si:1},
 ];
 
+function getMaskSlotByKey(key){
+  return MASK_SLOTS.find(s=>s.key===key)||null;
+}
+
 function getBoneXform(slot){
   if(!solveResult||!puppet) return null;
   if(slot.tag==='torso'){
-    return{mx:solveResult.tp.x,my:solveResult.tp.y,
-           angle:solveResult.ta+Math.PI/2,len:puppet.th,wid:puppet.tw};
+    return{
+      mx:solveResult.tp.x,my:solveResult.tp.y,
+      angle:solveResult.ta+Math.PI/2,len:puppet.th,wid:puppet.tw,
+      a:{x:solveResult.tp.x,y:solveResult.tp.y}, b:null
+    };
   }
   const js=solveResult.chains[slot.tag];
   if(!js||slot.si==null||slot.si>=js.length-1) return null;
   const a=js[slot.si].position, b=js[slot.si+1].position;
   const len=Math.hypot(b.x-a.x,b.y-a.y);
-  return{mx:(a.x+b.x)/2,my:(a.y+b.y)/2,angle:Math.atan2(b.y-a.y,b.x-a.x),len,wid:len*0.55};
+  return{
+    mx:(a.x+b.x)/2,my:(a.y+b.y)/2,
+    angle:Math.atan2(b.y-a.y,b.x-a.x),len,wid:len*0.55,
+    a:{x:a.x,y:a.y}, b:{x:b.x,y:b.y}
+  };
+}
+
+function maskUsesAnchor(m){
+  return Number.isFinite(m?.ax) && Number.isFinite(m?.ay);
+}
+
+function getMaskXform(slot, m){
+  const bt=getBoneXform(slot); if(!bt||!m?.img) return null;
+  const iw=m.img.naturalWidth, ih=m.img.naturalHeight;
+  if(!iw||!ih) return null;
+  if(maskUsesAnchor(m) && bt.a){
+    const axis = m.axis||'y';
+    const baseLen = Number.isFinite(m.baseLen)
+      ? m.baseLen
+      : (axis==='y' ? (ih - m.ay) : (iw - m.ax));
+    const denom = baseLen>1 ? baseLen : (axis==='y' ? ih : iw);
+    const s = (bt.len/denom) * (m.scale||1);
+    const rot = (axis==='y' ? (bt.angle - Math.PI/2) : bt.angle) + (m.rot||0);
+    return{
+      mode:'anchor',
+      tx:bt.a.x+(m.ox||0), ty:bt.a.y+(m.oy||0),
+      rot, sx:(m.flip?-s:s), sy:s,
+      iw, ih, ax:m.ax, ay:m.ay
+    };
+  }
+  const dh=bt.len*(m.scale||1), dw=ih>0?(iw/ih)*dh:dh;
+  return{
+    mode:'center',
+    tx:bt.mx+(m.ox||0), ty:bt.my+(m.oy||0),
+    rot:bt.angle+(m.rot||0),
+    dw, dh, iw, ih
+  };
 }
 
 function drawMasks(){
@@ -2773,19 +2820,26 @@ function drawMasks(){
   if(!solveResult) return;
   for(const slot of MASK_SLOTS){
     const m=masks[slot.key]; if(!m?.img) continue;
-    const bt=getBoneXform(slot); if(!bt) continue;
-    const iw=m.img.naturalWidth,ih=m.img.naturalHeight;
-    const dh=bt.len*(m.scale||1), dw=ih>0?(iw/ih)*dh:dh;
+    const xf=getMaskXform(slot,m); if(!xf) continue;
     maskCtx2.save();
     maskCtx2.globalAlpha=m.opacity??1;
-    maskCtx2.translate(bt.mx+(m.ox||0),bt.my+(m.oy||0));
-    maskCtx2.rotate(bt.angle+(m.rot||0));
-    if(m.flip) maskCtx2.scale(-1,1);
-    maskCtx2.drawImage(m.img,-dw/2,-dh/2,dw,dh);
+    maskCtx2.translate(xf.tx, xf.ty);
+    maskCtx2.rotate(xf.rot);
+    if(xf.mode==='anchor'){
+      maskCtx2.scale(xf.sx, xf.sy);
+      maskCtx2.drawImage(m.img, -xf.ax, -xf.ay);
+    } else {
+      if(m.flip) maskCtx2.scale(-1,1);
+      maskCtx2.drawImage(m.img,-xf.dw/2,-xf.dh/2,xf.dw,xf.dh);
+    }
     if(selMask===slot.key){
       maskCtx2.strokeStyle='#b8d820';maskCtx2.lineWidth=1.5;
       maskCtx2.setLineDash([4,3]);
-      maskCtx2.strokeRect(-dw/2,-dh/2,dw,dh);
+      if(xf.mode==='anchor'){
+        maskCtx2.strokeRect(-xf.ax, -xf.ay, xf.iw, xf.ih);
+      } else {
+        maskCtx2.strokeRect(-xf.dw/2,-xf.dh/2,xf.dw,xf.dh);
+      }
       maskCtx2.setLineDash([]);
     }
     maskCtx2.restore();
@@ -2797,13 +2851,21 @@ function maskHit(pt){
   for(let i=MASK_SLOTS.length-1;i>=0;i--){
     const slot=MASK_SLOTS[i],m=masks[slot.key];
     if(!m?.img) continue;
-    const bt=getBoneXform(slot); if(!bt) continue;
-    const dh=bt.len*(m.scale||1),dw=m.img.naturalHeight>0?(m.img.naturalWidth/m.img.naturalHeight)*dh:dh;
-    const dx=pt.x-(bt.mx+(m.ox||0)),dy=pt.y-(bt.my+(m.oy||0));
-    const ang=bt.angle+(m.rot||0);
-    const lx=dx*Math.cos(ang)+dy*Math.sin(ang);
-    const ly=-dx*Math.sin(ang)+dy*Math.cos(ang);
-    if(Math.abs(lx)<dw/2+6&&Math.abs(ly)<dh/2+6) return slot.key;
+    const xf=getMaskXform(slot,m); if(!xf) continue;
+    const dx=pt.x-xf.tx,dy=pt.y-xf.ty;
+    const ca=Math.cos(-xf.rot), sa=Math.sin(-xf.rot);
+    let lx=dx*ca - dy*sa;
+    let ly=dx*sa + dy*ca;
+    if(xf.mode==='anchor'){
+      lx = lx / xf.sx;
+      ly = ly / xf.sy;
+      const ix = lx + xf.ax;
+      const iy = ly + xf.ay;
+      if(ix>-6 && ix<xf.iw+6 && iy>-6 && iy<xf.ih+6) return slot.key;
+    } else {
+      if(m.flip) lx=-lx;
+      if(Math.abs(lx)<xf.dw/2+6&&Math.abs(ly)<xf.dh/2+6) return slot.key;
+    }
   }
   return null;
 }
@@ -2835,13 +2897,25 @@ function buildMaskPanel(){
         <span class="ms-k">sc</span><input class="ms-n" type="number" step="0.05" value="${(m.scale||1).toFixed(2)}"               data-sk="${slot.key}" data-p="scale">
         <span class="ms-k">α</span><input class="ms-n"  type="number" step="0.05" min="0" max="1" value="${(m.opacity??1).toFixed(2)}" data-sk="${slot.key}" data-p="opacity">
         <button class="ms-flip" data-sk="${slot.key}">⇄</button>
+      </div>
+      <div class="ms-nums">
+        <span class="ms-k">ax</span><input class="ms-n" type="number" step="1" value="${Number.isFinite(m.ax)?Math.round(m.ax):''}" data-sk="${slot.key}" data-p="ax">
+        <span class="ms-k">ay</span><input class="ms-n" type="number" step="1" value="${Number.isFinite(m.ay)?Math.round(m.ay):''}" data-sk="${slot.key}" data-p="ay">
+        <span class="ms-k">len</span><input class="ms-n" type="number" step="1" value="${Number.isFinite(m.baseLen)?Math.round(m.baseLen):''}" data-sk="${slot.key}" data-p="baseLen">
+        <button class="ms-anc" data-sk="${slot.key}" data-act="anchor">Pick</button>
       </div>`:''}`;
     panel.appendChild(wrap);
     wrap.querySelector('input[type=file]')?.addEventListener('change',e=>{
       const f=e.target.files[0]; if(!f) return;
       const r=new FileReader();
       r.onload=ev=>{const img=new Image();img.onload=()=>{
-        masks[slot.key]={img,ox:0,oy:0,scale:1,rot:0,flip:false,opacity:1};
+        const base={img,ox:0,oy:0,scale:1,rot:0,flip:false,opacity:1};
+        if(slot.tag!=='torso'){
+          const iw=img.naturalWidth, ih=img.naturalHeight;
+          const ax=iw/2, ay=Math.max(0, Math.min(ih*0.1, ih-1));
+          base.ax=ax; base.ay=ay; base.axis='y'; base.baseLen=ih-ay;
+        }
+        masks[slot.key]=base;
         selMask=slot.key; buildMaskPanel(); drawMasks();
       };img.src=ev.target.result;};
       r.readAsDataURL(f);
@@ -2854,14 +2928,26 @@ function buildMaskPanel(){
     wrap.querySelectorAll('.ms-n').forEach(inp=>{
       inp.addEventListener('input',()=>{
         const m2=masks[inp.dataset.sk]; if(!m2) return;
-        let v=parseFloat(inp.value)||0;
-        if(inp.dataset.p==='rot') v=v*Math.PI/180;
-        m2[inp.dataset.p]=v; drawMasks();
+        const p=inp.dataset.p;
+        const raw=inp.value.trim();
+        if(raw===''){
+          delete m2[p];
+          drawMasks();
+          return;
+        }
+        let v=parseFloat(raw);
+        if(!isFinite(v)) return;
+        if(p==='rot') v=v*Math.PI/180;
+        m2[p]=v; drawMasks();
       });
     });
     wrap.querySelector('.ms-flip')?.addEventListener('click',()=>{
       const m2=masks[slot.key]; if(!m2) return;
       m2.flip=!m2.flip; drawMasks();
+    });
+    wrap.querySelector('.ms-anc')?.addEventListener('click',()=>{
+      if(!masks[slot.key]) return;
+      anchorPick=slot.key;
     });
     wrap.querySelector('.ms-thumb')?.addEventListener('click',()=>{
       selMask=selMask===slot.key?null:slot.key;
@@ -2874,6 +2960,34 @@ maskCvs.addEventListener('mousedown',e=>{
   if(e.button!==0) return;
   const r=getStageRect();
   const pt={x:e.clientX-r.left,y:e.clientY-r.top};
+  if(anchorPick){
+    const key=anchorPick;
+    const slot=getMaskSlotByKey(key);
+    const m=masks[key];
+    const xf=slot&&m?getMaskXform(slot,m):null;
+    if(xf && xf.mode==='anchor'){
+      const dx=pt.x-xf.tx,dy=pt.y-xf.ty;
+      const ca=Math.cos(-xf.rot), sa=Math.sin(-xf.rot);
+      let lx=dx*ca - dy*sa;
+      let ly=dx*sa + dy*ca;
+      lx = lx / xf.sx;
+      ly = ly / xf.sy;
+      const ix = lx + xf.ax;
+      const iy = ly + xf.ay;
+      if(ix>=0 && ix<=xf.iw && iy>=0 && iy<=xf.ih){
+        m.ax = ix; m.ay = iy;
+        if(!Number.isFinite(m.baseLen)){
+          const axis=m.axis||'y';
+          m.baseLen = axis==='y' ? (m.img.naturalHeight - m.ay) : (m.img.naturalWidth - m.ax);
+        }
+        selMask=key;
+        buildMaskPanel(); drawMasks();
+      }
+    }
+    anchorPick=null;
+    e.stopPropagation(); e.preventDefault();
+    return;
+  }
   const hit=maskHit(pt);
   if(hit){
     selMask=hit; buildMaskPanel(); drawMasks();
