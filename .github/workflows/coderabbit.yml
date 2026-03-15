@@ -21,21 +21,6 @@ jobs:
           fetch-depth: 0
 
       - name: CodeRabbit Review
-        uses: coderabbitai/ai-pr-review@latest
-        with:
-          # Add your CodeRabbit API key as a repository secret
-          api_key: ${{ secrets.CODERABBIT_API_KEY }}
-          # Optional: Configure review settings
-          review_mode: 'comprehensive'
-          auto_review: true
-          # Optional: Specify files to include/exclude
-          include_patterns: |
-            **/*.py
-            **/*.html
-            **/*.js
-            **/*.css
-            **/*.json
-          exclude_patterns: |
-            **/*.min.js
-            **/node_modules/**
-            **/dist/**
+        uses: coderabbitai/ai-pr-reviewer@latest
+        env:
+          CODERABBIT_API_KEY: ${{ secrets.CODERABBIT_API_KEY }}
