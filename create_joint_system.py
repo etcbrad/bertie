@@ -3,14 +3,22 @@ import cv2
 import numpy as np
 import os
 import json
+from pathlib import Path
+
+# Get project root directory (where this script is located)
+PROJECT_ROOT = Path(__file__).parent
+BASE_DIR = PROJECT_ROOT / "Bertie Assets"
 
 def create_joint_references():
     """
     Create joint reference files based on the bone structure
     """
-    base_dir = "/Users/bradleygeiser/Documents/Bertie/Bertie Assets"
-    joints_dir = os.path.join(base_dir, "joints")
-    bones_dir = os.path.join(base_dir, "bones")
+    joints_dir = BASE_DIR / "joints"
+    bones_dir = BASE_DIR / "bones"
+    
+    # Ensure directories exist
+    joints_dir.mkdir(parents=True, exist_ok=True)
+    bones_dir.mkdir(parents=True, exist_ok=True)
     
     # Joint definitions based on the HTML puppet structure
     joints = {
@@ -71,7 +79,7 @@ def create_joint_references():
     }
     
     # Save joint definitions as JSON
-    joints_file = os.path.join(joints_dir, "joint_definitions.json")
+    joints_file = joints_dir / "joint_definitions.json"
     with open(joints_file, 'w') as f:
         json.dump(joints, f, indent=2)
     
@@ -92,7 +100,7 @@ def create_joint_references():
     }
     
     # Save bone mapping
-    mapping_file = os.path.join(joints_dir, "bone_mapping.json")
+    mapping_file = joints_dir / "bone_mapping.json"
     with open(mapping_file, 'w') as f:
         json.dump(bone_mapping, f, indent=2)
     
@@ -123,7 +131,7 @@ def create_joint_references():
     }
     
     # Save assembly instructions
-    assembly_file = os.path.join(joints_dir, "assembly_instructions.json")
+    assembly_file = joints_dir / "assembly_instructions.json"
     with open(assembly_file, 'w') as f:
         json.dump(assembly_instructions, f, indent=2)
     
@@ -135,7 +143,6 @@ def create_asset_manifest():
     """
     Create a manifest of all assets
     """
-    base_dir = "/Users/bradleygeiser/Documents/Bertie/Bertie Assets"
     manifest = {
         "project": "Bertie Assets",
         "description": "10-part puppet rigging assets with bone and joint definitions",
@@ -153,20 +160,20 @@ def create_asset_manifest():
     }
     
     # List bone files
-    bones_dir = os.path.join(base_dir, "bones")
-    if os.path.exists(bones_dir):
-        for file in os.listdir(bones_dir):
-            if file.endswith('.png'):
-                manifest["structure"]["bones"]["files"].append(file)
+    bones_dir = BASE_DIR / "bones"
+    if bones_dir.exists():
+        for file in bones_dir.glob("*.png"):
+            manifest["structure"]["bones"]["files"].append(file.name)
     
     # List joint files
-    joints_dir = os.path.join(base_dir, "joints")
-    if os.path.exists(joints_dir):
-        for file in os.listdir(joints_dir):
-            manifest["structure"]["joints"]["files"].append(file)
+    joints_dir = BASE_DIR / "joints"
+    if joints_dir.exists():
+        for file in joints_dir.iterdir():
+            if file.is_file():
+                manifest["structure"]["joints"]["files"].append(file.name)
     
     # Save manifest
-    manifest_file = os.path.join(base_dir, "manifest.json")
+    manifest_file = BASE_DIR / "manifest.json"
     import json
     with open(manifest_file, 'w') as f:
         json.dump(manifest, f, indent=2)

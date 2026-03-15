@@ -737,8 +737,6 @@ html,body{width:100%;height:100%;background:#070609;overflow:hidden;font-family:
     </div>
   </div>
 
-v>
-
   <div class="tb-div"></div>
   <button class="cb" id="btn-reset" data-tip="Reset pose (R)" style="position:relative">
     <svg class="cb-icon" viewBox="0 0 46 46" fill="none">
@@ -816,6 +814,15 @@ v>
       <rect id="ratio-rect" x="0" y="0" width="32" height="24" rx="1.5" stroke="currentColor" stroke-width="1.5" fill="none"/>
     </svg>
     <span id="ratio-label">4:3</span>
+  </button>
+
+  <!-- Performance / Quality toggle -->
+  <button class="cb" id="btn-perf" data-tip="Render mode — Perf (coalesced) / Quality (immediate)">
+    <svg class="cb-icon" viewBox="0 0 46 46" fill="none">
+      <polygon points="12,30 24,10 34,30" stroke="currentColor" stroke-width="1.6" fill="none"/>
+      <line x1="18" y1="30" x2="30" y2="30" stroke="currentColor" stroke-width="1.6"/>
+    </svg>
+    <span class="cl" id="perf-label">Perf</span>
   </button>
 
   <div class="tb-div"></div>
@@ -921,6 +928,67 @@ v>
 </div>
 
 <script>
+// ── Configuration Constants ─────────────────────────────────────────────────────────────
+const CONFIG = {
+  // Puppet proportions
+  BICEP_SEGMENT_SCALE: 40,
+  TORSO_HEIGHT_SCALE: 2.2,
+  HEAD_SCALE: 1.3,
+  ARM_SCALE: 2,
+  LEG_SCALE: 3,
+  THIGH_SCALE: 1.5,
+  SHIN_SCALE: 1.5,
+  
+  // IK solver constants
+  MAX_ITERATIONS: 20,
+  CONVERGENCE_THRESHOLD: 0.001,
+  
+  // UI constants
+  BORDER_PADDING: 16,
+  DEFAULT_ASPECT_RATIO: 4/3,
+  
+  // Rendering constants
+  ANCHOR_RADIUS: 5,
+  SELECTED_LINE_WIDTH: 1.8,
+  DEFAULT_LINE_WIDTH: 1,
+  TORSO_ALPHA: 0.82,
+  PADDING: 10
+};
+
+// ── Bertie Physics (rigid cutout) ─────────────────────────────────────────────
+const DEG = Math.PI / 180;
+const PHYSICS = {
+  style: 'smooth',          // 'smooth' default; use 'bertie' for rigid + stepped
+  snapDeg: 7.5,             // angular snap step (degrees)
+  snapInFK: true,
+  snapInIK: true,
+  snapInTween: true,
+  enforceLimits: true,
+  ikIterations: 10,         // fewer iterations = more rigid/less smooth
+  ikEpsilon: 0.75           // larger epsilon = less precise, more rigid
+};
+
+// Joint limits (degrees) inspired by joint_definitions.json
+const JOINT_LIMITS_DEG = {
+  head:     [{min:-45, max:45}],
+  // Elbows/knees are directional hinges (refined)
+  leftArm:  [{maxAbs:160}, {min:-150, max:0}],
+  rightArm: [{maxAbs:160}, {min:0, max:150}],
+  leftLeg:  [{min:-120, max:45}, {min:-150, max:0}],
+  rightLeg: [{min:-120, max:45}, {min:0, max:150}]
+};
+
+const JOINT_LIMITS = Object.fromEntries(
+  Object.entries(JOINT_LIMITS_DEG).map(([k,arr])=>[
+    k,
+    arr.map(l=>(
+      l.maxAbs!=null
+        ? {maxAbs:l.maxAbs*DEG}
+        : {min:(l.min??0)*DEG, max:(l.max??0)*DEG}
+    ))
+  ])
+);
+
 // ── math ─────────────────────────────────────────────────────────────────────
 const v2      = (x,y)  => ({x,y});
 const v2add   = (a,b)  => ({x:a.x+b.x,y:a.y+b.y});
@@ -932,10 +1000,19 @@ const v2angle = v      => Math.atan2(v.y,v.x);
 const v2fa    = (a,l)  => ({x:Math.cos(a)*l,y:Math.sin(a)*l});
 const v2rot_  = (v,a)  => ({x:v.x*Math.cos(a)-v.y*Math.sin(a),y:v.x*Math.sin(a)+v.y*Math.cos(a)});
 
+const clamp = (v,min,max)=>Math.max(min,Math.min(max,v));
+const normAngle = a => {while(a> Math.PI)a-=2*Math.PI;while(a<-Math.PI)a+=2*Math.PI;return a;};
+const snapAngle = (a,deg)=>{
+  if(!deg || deg<=0) return a;
+  const s=deg*DEG;
+  return Math.round(a/s)*s;
+};
+
 // ── chain ────────────────────────────────────────────────────────────────────
 class Chain {
-  constructor(n,len,id){
+  constructor(n,len,id,limits){
     this.id=id; this.handleId=id+'_H';
+    this.limits=limits||[];
     this.segs=this._build(n,len);
   }
   _build(n,total){
@@ -946,6 +1023,27 @@ class Chain {
       rigidity:false, localAngle:0, influence:0, committed:false
     }));
   }
+  _constrainLocal(i, local, ctx){
+    if(PHYSICS.style!=='bertie') return local;
+    let out = normAngle(local);
+    const lim=this.limits?.[i];
+    if(PHYSICS.enforceLimits && lim){
+      if(typeof lim.maxAbs==='number') out=clamp(out,-lim.maxAbs,lim.maxAbs);
+      else {
+        const min=Number.isFinite(lim.min)?lim.min:-Infinity;
+        const max=Number.isFinite(lim.max)?lim.max: Infinity;
+        out=clamp(out,min,max);
+      }
+    }
+    const doSnap =
+      (ctx==='FK'   && PHYSICS.snapInFK) ||
+      (ctx==='IK'   && PHYSICS.snapInIK) ||
+      (ctx==='TWEEN'&& PHYSICS.snapInTween) ||
+      (ctx==='DRAG' && PHYSICS.snapInFK);
+    if(doSnap) out=snapAngle(out, PHYSICS.snapDeg);
+    return out;
+  }
+  constrainLocal(i, local, ctx='FK'){return this._constrainLocal(i, local, ctx)}
   get totalLength(){return this.segs.reduce((s,g)=>s+g.length,0)}
   get count(){return this.segs.length}
 
@@ -971,41 +1069,92 @@ class Chain {
 
   // FK: worldAngle[i] = worldAngle[i-1] + localAngle[i] + influence[i] * prevLocalAngle
   solveFK(rootPos,rootWA,rootDelta=0){
-    const js=[];let pos={...rootPos},wa=rootWA,prev=rootDelta;
-    for(const s of this.segs){
+    try {
+      if (!rootPos || !rootWA) {
+        throw new Error('Invalid root position or angle');
+      }
+      
+      const js=[];let pos={...rootPos},wa=rootWA,prev=rootDelta;
+      for(let i=0;i<this.segs.length;i++){
+        const s=this.segs[i];
+        if (!s || typeof s.length !== 'number' || s.length <= 0) {
+          throw new Error('Invalid segment configuration');
+        }
+        js.push({position:{...pos},worldAngle:wa});
+        const influence = PHYSICS.style==='bertie' ? 0 : s.influence;
+        let local = s.committed ? s.localAngle : (s.localAngle + influence*prev);
+        local = this._constrainLocal(i, local, 'FK');
+        const out = s.rigidity ? wa : (wa + local);
+        pos=v2add(pos,v2fa(out,s.length));
+        prev = s.rigidity ? 0 : local;
+        wa=out;
+      }
       js.push({position:{...pos},worldAngle:wa});
-      let out=s.rigidity?wa:s.committed?(wa+s.localAngle):(wa+s.localAngle+s.influence*prev);
-      pos=v2add(pos,v2fa(out,s.length));prev=s.localAngle;wa=out;
+      return js;
+    } catch (error) {
+      console.error('Error in solveFK:', error);
+      return this.solveFK(rootPos, rootWA, 0); // Fallback to simple solve
     }
-    js.push({position:{...pos},worldAngle:wa});
-    return js;
   }
 
   // FABRIK IK
   solveIK(rootPos,rootWA,target){
-    const n=this.segs.length,lens=this.segs.map(s=>s.length),tot=this.totalLength;
-    let pts=this.solveFK(rootPos,rootWA).map(j=>({...j.position}));
-    if(v2len(v2sub(target,rootPos))>=tot){
-      const a=v2angle(v2sub(target,rootPos));
-      pts=[{...rootPos}];
-      for(let i=0;i<n;i++)pts.push(v2add(pts[i],v2fa(a,lens[i])));
-    } else {
-      for(let it=0;it<20;it++){
-        pts[n]={...target};
-        for(let i=n-1;i>=0;i--){const d=v2norm(v2sub(pts[i],pts[i+1]));pts[i]=v2add(pts[i+1],v2scale(d,lens[i]));}
-        pts[0]={...rootPos};
-        for(let i=0;i<n;i++){const d=v2norm(v2sub(pts[i+1],pts[i]));pts[i+1]=v2add(pts[i],v2scale(d,lens[i]));}
-        if(v2len(v2sub(pts[n],target))<.001)break;
+    try {
+      if (!rootPos || !rootWA || !target) {
+        throw new Error('Invalid IK parameters');
       }
+      
+      const n=this.segs.length,lens=this.segs.map(s=>s.length),tot=this.totalLength;
+      let pts=this.solveFK(rootPos,rootWA).map(j=>({...j.position}));
+      
+      if(v2len(v2sub(target,rootPos))>=tot){
+        const a=v2angle(v2sub(target,rootPos));
+        pts=[{...rootPos}];
+        for(let i=0;i<n;i++)pts.push(v2add(pts[i],v2fa(a,lens[i])));
+      } else {
+        const maxIter = PHYSICS.style==='bertie' ? PHYSICS.ikIterations : CONFIG.MAX_ITERATIONS;
+        const eps = PHYSICS.style==='bertie' ? PHYSICS.ikEpsilon : CONFIG.CONVERGENCE_THRESHOLD;
+        for(let it=0;it<maxIter;it++){
+          pts[n]={...target};
+          for(let i=n-1;i>=0;i--){
+            const d=v2norm(v2sub(pts[i],pts[i+1]));
+            if (!d || !isFinite(d.x) || !isFinite(d.y)) {
+              throw new Error('Invalid direction vector in IK');
+            }
+            pts[i]=v2add(pts[i+1],v2scale(d,lens[i]));
+          }
+          pts[0]={...rootPos};
+          for(let i=0;i<n;i++){
+            const d=v2norm(v2sub(pts[i+1],pts[i]));
+            if (!d || !isFinite(d.x) || !isFinite(d.y)) {
+              throw new Error('Invalid direction vector in IK');
+            }
+            pts[i+1]=v2add(pts[i],v2scale(d,lens[i]));
+          }
+          if(v2len(v2sub(pts[n],target))<eps)break;
+        }
+      }
+      
+      let pwa=rootWA;
+      for(let i=0;i<n;i++){
+        const s=this.segs[i];
+        let local=0;
+        if(s.rigidity){
+          local=0;
+        } else if(s.committed){
+          local=s.localAngle;
+        } else {
+          const wa=v2angle(v2sub(pts[i+1],pts[i]));
+          local=this._constrainLocal(i, wa-pwa, 'IK');
+          this.segs[i]={...s,localAngle:local,influence:0};
+        }
+        pwa=pwa+local;
+      }
+      return this.solveFK(rootPos,rootWA,0);
+    } catch (error) {
+      console.error('Error in solveIK:', error);
+      return this.solveFK(rootPos, rootWA, 0); // Fallback to FK
     }
-    let pwa=rootWA;
-    for(let i=0;i<n;i++){
-      const wa=v2angle(v2sub(pts[i+1],pts[i]));
-      if(!this.segs[i].rigidity&&!this.segs[i].committed)
-        this.segs[i]={...this.segs[i],localAngle:wa-pwa,influence:0};
-      pwa=wa;
-    }
-    return pts.map((p,i)=>({position:p,worldAngle:i>0?v2angle(v2sub(pts[i],pts[i-1])):rootWA}));
   }
 
   setInfluence(i,v){if(i>=0&&i<this.segs.length)this.segs[i]={...this.segs[i],influence:v}}
@@ -1037,9 +1186,9 @@ class Puppet {
     // Right arm + head share neck anchor V0
     // Left arm mounts at left shoulder corner V4
     // Legs mount at hip corners; right leg at center base
-    const bic = 40*s;
+    const bic = CONFIG.BICEP_SEGMENT_SCALE*s;
     this.tw = bic;         // shoulder half-span total = 1 bic
-    this.th = 2.2*bic;     // torso height: corners raised to arm level
+    this.th = CONFIG.TORSO_HEIGHT_SCALE*bic;     // torso height: corners raised to arm level
     const tw=this.tw, th=this.th;
     // Pentagon vertices (torso-local, y-down):
     // V0 neck apex:    (0,          -th/2)      top point  (arm mount)
@@ -1048,11 +1197,11 @@ class Puppet {
     // V3 l-hip:        (-tw*0.335,   th/2)
     // V4 l-shoulder:   (-tw/2,      -th/2)       SAME Y as V0 — flat shoulder line
     this.chains={
-      head:     new Chain(1, bic*1.3,  'head'),
-      leftArm:  new Chain(2, bic*2,    'leftArm'),
-      rightArm: new Chain(2, bic*2,    'rightArm'),
-      leftLeg:  new Chain(2, bic*3,    'leftLeg'),   // 2 segs × 1.5 bic = 3 bic total
-      rightLeg: new Chain(2, bic*3,    'rightLeg'),
+      head:     new Chain(1, bic*CONFIG.HEAD_SCALE,  'head',     JOINT_LIMITS.head),
+      leftArm:  new Chain(2, bic*CONFIG.ARM_SCALE,    'leftArm',  JOINT_LIMITS.leftArm),
+      rightArm: new Chain(2, bic*CONFIG.ARM_SCALE,    'rightArm', JOINT_LIMITS.rightArm),
+      leftLeg:  new Chain(2, bic*CONFIG.LEG_SCALE,    'leftLeg',  JOINT_LIMITS.leftLeg),   // 2 segs × 1.5 bic = 3 bic total
+      rightLeg: new Chain(2, bic*CONFIG.LEG_SCALE,    'rightLeg', JOINT_LIMITS.rightLeg),
     };
     this.mounts={
       head:     {off:v2(0,           -th/2),     ang:-Math.PI/2}, // V0 neck apex
@@ -1275,7 +1424,6 @@ function render(ctx,W,H,puppet,res,sel,mode){
 // ── Manikin/Reference Figure Rendering ─────────────────────────────────────
 function renderManikin(ctx,W,H,puppet,res){
   if(!manikinOn || !puppet) return;
-  
   const {tp,ta,chains}=res;
   const bic = puppet.tw;
   
@@ -1376,8 +1524,9 @@ function renderManikin(ctx,W,H,puppet,res){
 const stage  = document.getElementById('stage');
 const blCvs  = document.getElementById('bl-cvs');
 const ppCvs  = document.getElementById('pp-cvs');
-const blCtx  = blCvs.getContext('2d');
-const ppCtx  = ppCvs.getContext('2d');
+const ctxOpts = { alpha: true, desynchronized: true };
+const blCtx  = blCvs.getContext('2d', ctxOpts);
+const ppCtx  = ppCvs.getContext('2d', ctxOpts);
 const ldot   = document.getElementById('ldot');
 const tipEl  = document.getElementById('tip');
 const szb    = document.getElementById('szb');
@@ -1388,7 +1537,20 @@ let torsoSegments=1; // 1=collar+full torso, 2=collar+upper+lower, 3=collar+uppe
 let backlitOn=false, negOn=false, lightX=.5, lightY=.5;
 let mode='FK', selChain=null;
 let torsoAngle=REST, puppet=null, solveResult=null, ikTargets={};
-let manikinOn=false; // Toggle for reference manikin display
+let manikinOn=true; // Toggle for reference manikin display
+let perfMode='perf'; // 'perf' or 'quality'
+let solveQueued=false;
+
+let stageRect = stage.getBoundingClientRect();
+let stageRectDirty = false;
+function markStageRectDirty(){ stageRectDirty = true; }
+function getStageRect(){
+  if(stageRectDirty){
+    stageRect = stage.getBoundingClientRect();
+    stageRectDirty = false;
+  }
+  return stageRect;
+}
 
 // ── geometry ──────────────────────────────────────────────────────────────────
 function targetGeom(){
@@ -1417,6 +1579,7 @@ function applyGeom(x,y,w,h,animate){
   // Stage is fixed via CSS (inset); we just sync canvas sizes
   blCvs.width=ppCvs.width=stage.offsetWidth;
   blCvs.height=ppCvs.height=stage.offsetHeight;
+  markStageRectDirty();
   drawLight(); rebuildPuppet();
 }
 
@@ -1429,6 +1592,8 @@ function initStage(){
   function _syncAndBuild(){
     // getBoundingClientRect works correctly inside iframes
     const r=stage.getBoundingClientRect();
+    stageRect = r;
+    stageRectDirty = false;
     const w=r.width  || window.innerWidth;
     const h=r.height || Math.max(window.innerHeight-96, 200);
     blCvs.width=ppCvs.width=Math.round(w);
@@ -1614,7 +1779,20 @@ function clampFigure(){
   return true;
 }
 
-function doSolve(){
+function doSolve(force=false){
+  if(force || perfMode!=='perf'){
+    doSolveNow();
+    return;
+  }
+  if(solveQueued) return;
+  solveQueued=true;
+  requestAnimationFrame(()=>{
+    solveQueued=false;
+    doSolveNow();
+  });
+}
+
+function doSolveNow(){
   if(!puppet)return;
   solveResult=puppet.solve(torsoPos(),torsoAngle,mode,ikTargets);
   // Apply pinned-foot torso correction (IK mode only, when feet are anchored)
@@ -1687,6 +1865,7 @@ const RICH_TIP = {
   'sb-neg-corner':{title:'Negative',          body:'Inverts all tones on the canvas.\nRequires Backlight to be on.'},
   'ctrl-lock':    {title:'Lock / Free',       body:'Locked: canvas fills window.\nFree: drag and resize the canvas.'},
   'ratio-btn':    {title:'Aspect Ratio',      body:'Cycles canvas ratio:\n4:3 → 6:5 → 1:1 → repeat.'},
+  'btn-perf':     {title:'Render Mode',       body:'Perf: coalesced rAF renders.\nQuality: immediate updates.'},
   'btn-msk':      {title:'Masks',             body:'Attach PNG images to bone segments.\nImages track as you pose.'},
   'btn-data':     {title:'Data Panel',        body:'Hover: live pose JSON card (select+copy).\nClick: full rig/pose/apply panel.'},
   'pose-rail-min':{title:'Pose Rail',         body:'Minimize/restore the pose slot strip.\nLong-press for library options.'},
@@ -2033,13 +2212,13 @@ function puppetBBox(){
 }
 
 function stageToViewport(x,y){
-  const r=stage.getBoundingClientRect();
+  const r=getStageRect();
   return {x:r.left+x, y:r.top+y};
 }
 
 function placeDock(floatEl, btnEl){
   // Position dock left or right of the puppet, away from the figure
-  const stageR=stage.getBoundingClientRect();
+  const stageR=getStageRect();
   const bb=puppetBBox();
   const dw=floatEl.offsetWidth||180, dh=floatEl.offsetHeight||160;
   const margin=12; // px gap from figure
@@ -2251,7 +2430,7 @@ document.addEventListener('click',e=>{
 
 // ── input ─────────────────────────────────────────────────────────────────────
 let dragState=null;
-function stageXY(e){const r=stage.getBoundingClientRect();return v2(e.clientX-r.left,e.clientY-r.top);}
+function stageXY(e){const r=getStageRect();return v2(e.clientX-r.left,e.clientY-r.top);}
 function hitHandle(pt){
   if(!solveResult||mode!=='IK')return null;
   let best=null,bestD=18;
@@ -2309,7 +2488,7 @@ ppCvs.addEventListener('mousedown',e=>{
   }
   // handle
   const h=hitHandle(pt);
-  if(h){dragState={type:'handle',tag:h,stageRect:stage.getBoundingClientRect()};selChain=h;ppCvs.style.cursor='grabbing';e.preventDefault();e.stopPropagation();return;}
+  if(h){dragState={type:'handle',tag:h,stageRect:getStageRect()};selChain=h;ppCvs.style.cursor='grabbing';e.preventDefault();e.stopPropagation();return;}
   // FK joint rotation
   const jh=hitJoint(pt);
   if(jh){
@@ -2320,7 +2499,7 @@ ppCvs.addEventListener('mousedown',e=>{
       prevAngle:initAngle,  // tracks last frame angle for incremental delta
       accumulated:0,        // total rotation accumulated since drag start
       initLocal:seg.localAngle,
-      stageRect:stage.getBoundingClientRect()};
+      stageRect:getStageRect()};
     selChain=jh.tag;
     ppCvs.style.cursor='crosshair';
     e.preventDefault();e.stopPropagation();return;
@@ -2337,7 +2516,7 @@ ppCvs.addEventListener('mousedown',e=>{
     dragState={type:'fk-torso-rot', pivot,
       prevAngle:initA, accumulated:0, initTorsoA:ta,
       initOffset:{...torsoOffset},
-      stageRect:stage.getBoundingClientRect()};
+      stageRect:getStageRect()};
     ppCvs.style.cursor='crosshair';
     e.preventDefault();e.stopPropagation();return;
   }
@@ -2352,7 +2531,7 @@ ppCvs.addEventListener('mousedown',e=>{
       dragState={type:'fk-torso-rot', pivot,
         prevAngle:initA, accumulated:0, initTorsoA:ta,
         initOffset:{...torsoOffset},
-        stageRect:stage.getBoundingClientRect()};
+        stageRect:getStageRect()};
       ppCvs.style.cursor='crosshair';
     } else {
       dragState={type:e.shiftKey?'torso-rot':'torso-mv',
@@ -2406,7 +2585,7 @@ document.addEventListener('mousemove',e=>{
   }
   const {type}=dragState;
   if(type==='light'){
-    const r=stage.getBoundingClientRect();
+    const r=getStageRect();
     lightX=Math.max(0,Math.min(1,(e.clientX-r.left)/r.width));
     lightY=Math.max(0,Math.min(1,(e.clientY-r.top)/r.height));
     placeLdot();drawLight();return;
@@ -2457,8 +2636,10 @@ document.addEventListener('mousemove',e=>{
     while(delta<-Math.PI) delta+=2*Math.PI;
     dragState.prevAngle=cur;
     dragState.accumulated+=delta;
-    puppet.chains[dragState.tag].segs[dragState.segIdx].localAngle=
-      dragState.initLocal+dragState.accumulated;
+    const ch=puppet.chains[dragState.tag];
+    const rawLocal=dragState.initLocal+dragState.accumulated;
+    const snapped=ch.constrainLocal(dragState.segIdx, rawLocal, 'DRAG');
+    ch.segs[dragState.segIdx]={...ch.segs[dragState.segIdx], localAngle:snapped};
     doSolve();return;
   }
   if(type==='torso-mv'){
@@ -2499,6 +2680,7 @@ document.addEventListener('mousemove',e=>{
     stage.style.left=Math.min(Math.max(nx,0),window.innerWidth-stage.offsetWidth)+'px';
     stage.style.top=Math.min(Math.max(ny,0),window.innerHeight-BAR-stage.offsetHeight)+'px';
     szb.textContent=Math.round(stage.offsetLeft)+','+Math.round(stage.offsetTop);
+    markStageRectDirty();
     return;
   }
   if(type==='resize'){
@@ -2515,6 +2697,7 @@ document.addEventListener('mousemove',e=>{
     blCvs.width=ppCvs.width=w;blCvs.height=ppCvs.height=h;
     drawLight();rebuildPuppet();
     szb.textContent=w+'×'+h;
+    markStageRectDirty();
   }
 });
 
@@ -2537,7 +2720,25 @@ maskCvs.width  = stage.offsetWidth  || 1;
 maskCvs.height = stage.offsetHeight || 1;
 maskCvs.style.cssText = 'position:absolute;inset:0;z-index:4';
 stage.appendChild(maskCvs);
-const maskCtx2 = maskCvs.getContext('2d');
+const maskCtx2 = maskCvs.getContext('2d', ctxOpts);
+
+function applyPerfMode(){
+  const isPerf = perfMode==='perf';
+  const btn = document.getElementById('btn-perf');
+  const lbl = document.getElementById('perf-label');
+  if(btn) btn.classList.toggle('on', isPerf);
+  if(lbl) lbl.textContent = isPerf ? 'Perf' : 'Quality';
+  if(ppCtx) ppCtx.imageSmoothingEnabled = !isPerf;
+  if(blCtx) blCtx.imageSmoothingEnabled = !isPerf;
+  if(maskCtx2) maskCtx2.imageSmoothingEnabled = !isPerf;
+}
+
+document.getElementById('btn-perf')?.addEventListener('click',e=>{
+  e.stopPropagation();
+  perfMode = perfMode==='perf' ? 'quality' : 'perf';
+  applyPerfMode();
+  doSolve(true);
+});
 
 const MASK_SLOTS = [
   {key:'torso',   label:'Torso',        tag:'torso',    si:null},
@@ -2671,7 +2872,7 @@ function buildMaskPanel(){
 
 maskCvs.addEventListener('mousedown',e=>{
   if(e.button!==0) return;
-  const r=stage.getBoundingClientRect();
+  const r=getStageRect();
   const pt={x:e.clientX-r.left,y:e.clientY-r.top};
   const hit=maskHit(pt);
   if(hit){
@@ -2713,6 +2914,7 @@ document.getElementById('btn-msk').addEventListener('click',e=>{
 });
 
 new ResizeObserver(()=>{
+  markStageRectDirty();
   if(ppCvs.width !== stage.offsetWidth || ppCvs.height !== stage.offsetHeight){
     blCvs.width=ppCvs.width=stage.offsetWidth;
     blCvs.height=ppCvs.height=stage.offsetHeight;
@@ -2722,6 +2924,7 @@ new ResizeObserver(()=>{
 }).observe(stage);
 buildMaskPanel();
 maskReady=true;
+applyPerfMode();
 
 
 // ══ DATA PANEL ════════════════════════════════════════════════════════════════
@@ -3089,8 +3292,11 @@ function writePose(p){
     if(!segs) continue;
     segs.forEach((s,i)=>{
       if(i>=ch.segs.length) return;
+      const snapped=typeof s.localAngle==='number'
+        ? ch.constrainLocal(i, s.localAngle, 'TWEEN')
+        : ch.segs[i].localAngle;
       ch.segs[i]={...ch.segs[i],
-        localAngle:s.localAngle, committed:s.committed,
+        localAngle:snapped, committed:s.committed,
         rigidity:s.rigidity,    influence:s.influence};
     });
   }
@@ -3113,7 +3319,8 @@ function lerpPose(from, to, t){
     fs.forEach((_,i)=>{
       if(i>=ch.segs.length) return;
       const la = lerpAngle(fs[i].localAngle, ts[i].localAngle, t);
-      ch.segs[i]={...ch.segs[i], localAngle:la};
+      const snapped = ch.constrainLocal(i, la, 'TWEEN');
+      ch.segs[i]={...ch.segs[i], localAngle:snapped};
     });
   }
 }
@@ -3673,13 +3880,10 @@ function copyPoseJSON(){
 
 // ── Initialize all features when DOM is ready ─────────────────────────────────
 function initializeAllFeatures() {
-  console.log('Initializing all features...');
-  
   // Initialize mode button
   const cbMode = document.getElementById('cb-mode');
   if(cbMode) {
     cbMode.addEventListener('click',()=>{
-      console.log('Mode button clicked, current mode:', mode);
       mode=mode==='FK'?'IK':'FK';
       document.getElementById('mode-label').textContent=mode;
       document.getElementById('cb-mode').classList.toggle('on',mode==='IK');
@@ -3687,24 +3891,17 @@ function initializeAllFeatures() {
       if(mode==='IK'&&solveResult)ikTargets=puppet.handles(solveResult);
       doSolve();
     });
-    console.log('Mode button listener attached');
-  } else {
-    console.error('cb-mode button not found');
   }
 
   // Initialize manikin button
   const btnManikin = document.getElementById('btn-manikin');
   if(btnManikin) {
+    btnManikin.classList.toggle('on',manikinOn);
     btnManikin.addEventListener('click',()=>{
-      console.log('Manikin button clicked, current state:', manikinOn);
       manikinOn=!manikinOn;
       document.getElementById('btn-manikin').classList.toggle('on',manikinOn);
       doSolve();
-      console.log('Manikin toggled to:', manikinOn);
     });
-    console.log('Manikin button listener attached');
-  } else {
-    console.error('btn-manikin button not found');
   }
 
   // Initialize action buttons
@@ -3713,29 +3910,18 @@ function initializeAllFeatures() {
   const btnExport = document.getElementById('btn-export');
 
   if(btnReset) {
-    btnReset.addEventListener('click',e=>{e.stopPropagation();console.log('Reset button clicked');resetPose();});
-    console.log('Reset button listener attached');
-  } else {
-    console.error('btn-reset button not found');
+    btnReset.addEventListener('click',e=>{e.stopPropagation();resetPose();});
   }
 
   if(btnMirror) {
-    btnMirror.addEventListener('click',e=>{e.stopPropagation();console.log('Mirror button clicked');mirrorPose();});
-    console.log('Mirror button listener attached');
-  } else {
-    console.error('btn-mirror button not found');
+    btnMirror.addEventListener('click',e=>{e.stopPropagation();mirrorPose();});
   }
 
   if(btnExport) {
-    btnExport.addEventListener('click',e=>{e.stopPropagation();console.log('Export button clicked');exportPNG();});
-    console.log('Export button listener attached');
-  } else {
-    console.error('btn-export button not found');
+    btnExport.addEventListener('click',e=>{e.stopPropagation();exportPNG();});
   }
 
   ['btn-reset','btn-mirror','btn-export'].forEach(id=>{const el=document.getElementById(id);if(el)attachTip(el);});
-
-  console.log('All features initialized successfully!');
 }
 
 // Wait for DOM to be ready before initializing

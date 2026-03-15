@@ -3,40 +3,57 @@ import cv2
 import numpy as np
 import os
 from PIL import Image
+from pathlib import Path
 
-def analyze_and_cut_parts(image_path, output_dir, prefix):
+# Configuration
+PROJECT_ROOT = Path(__file__).parent
+OUTPUT_DIR = PROJECT_ROOT / "Bertie Assets" / "bones"
+
+# Image processing constants
+DEFAULT_REGIONS = {
+    1: (0.05, 0.05, 0.25, 0.35),    # Head
+    2: (0.35, 0.05, 0.30, 0.35),    # Torso  
+    3: (0.70, 0.05, 0.25, 0.25),    # Right Upper Arm
+    4: (0.70, 0.35, 0.25, 0.25),    # Right Lower Arm
+    5: (0.05, 0.45, 0.25, 0.25),    # Left Upper Arm
+    6: (0.05, 0.75, 0.25, 0.20),    # Left Lower Arm
+    7: (0.35, 0.45, 0.30, 0.25),    # Right Upper Leg
+    8: (0.35, 0.75, 0.30, 0.20),    # Right Lower Leg + Foot
+    9: (0.70, 0.65, 0.25, 0.30),    # Left Upper Leg
+    10: (0.70, 0.95, 0.25, 0.05)    # Left Lower Leg + Foot
+}
+
+def validate_image_path(image_path):
+    """Validate that the image file exists and is readable"""
+    if not Path(image_path).exists():
+        raise FileNotFoundError(f"Image file not found: {image_path}")
+    
+    try:
+        img = cv2.imread(str(image_path))
+        if img is None:
+            raise ValueError(f"Could not read image file: {image_path}")
+        return img
+    except Exception as e:
+        raise ValueError(f"Error loading image {image_path}: {str(e)}")
+def analyze_and_cut_parts(image_path, prefix, regions=None):
     """
     Analyze the image and cut it into 10 parts based on the annotated sheet
-    """
-    # Load the image
-    img = cv2.imread(image_path)
-    if img is None:
-        print(f"Error: Could not load {image_path}")
-        return
     
+    Args:
+        image_path: Path to input image
+        prefix: Prefix for output files
+        regions: Custom region definitions (optional)
+    """
+    # Validate and load image
+    img = validate_image_path(image_path)
     height, width = img.shape[:2]
     print(f"Image size: {width}x{height}")
     
-    # Based on the annotated sheet, I can see the 10 parts arranged in a grid
-    # Let me define the approximate regions for each part
-    # This is a rough estimate - we'll need to fine-tune based on the actual image
+    # Use default or custom regions
+    regions = regions or DEFAULT_REGIONS
     
-    # Define regions (x, y, width, height) as percentages of image size
-    regions = {
-        1: (0.05, 0.05, 0.25, 0.35),    # Head
-        2: (0.35, 0.05, 0.30, 0.35),    # Torso  
-        3: (0.70, 0.05, 0.25, 0.25),    # Right Upper Arm
-        4: (0.70, 0.35, 0.25, 0.25),    # Right Lower Arm
-        5: (0.05, 0.45, 0.25, 0.25),    # Left Upper Arm
-        6: (0.05, 0.75, 0.25, 0.20),    # Left Lower Arm
-        7: (0.35, 0.45, 0.30, 0.25),    # Right Upper Leg
-        8: (0.35, 0.75, 0.30, 0.20),    # Right Lower Leg + Foot
-        9: (0.70, 0.65, 0.25, 0.30),    # Left Upper Leg
-        10: (0.70, 0.95, 0.25, 0.05)    # Left Lower Leg + Foot
-    }
-    
-    # Create output directory
-    os.makedirs(output_dir, exist_ok=True)
+    # Ensure output directory exists
+    OUTPUT_DIR.mkdir(parents=True, exist_ok=True)
     
     # Cut each part
     for part_num, (x_pct, y_pct, w_pct, h_pct) in regions.items():
@@ -55,19 +72,22 @@ def analyze_and_cut_parts(image_path, output_dir, prefix):
         part = img[y:y+h, x:x+w]
         
         # Save the part
-        output_path = os.path.join(output_dir, f"{prefix}_part_{part_num:02d}.png")
-        cv2.imwrite(output_path, part)
+        output_path = OUTPUT_DIR / f"{prefix}_part_{part_num:02d}.png"
+        cv2.imwrite(str(output_path), part)
         print(f"Saved part {part_num} to {output_path}")
 
-def process_anchor_holes(image_path, output_dir, prefix):
+def process_anchor_holes(image_path, prefix, min_radius=5, max_radius=15):
     """
     Process anchor holes - eliminate paper but preserve ink that impedes holes
+    
+    Args:
+        image_path: Path to input image
+        prefix: Prefix for output files
+        min_radius: Minimum anchor hole radius
+        max_radius: Maximum anchor hole radius
     """
-    # Load the image
-    img = cv2.imread(image_path)
-    if img is None:
-        print(f"Error: Could not load {image_path}")
-        return
+    # Validate and load image
+    img = validate_image_path(image_path)
     
     # Convert to grayscale
     gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
@@ -105,23 +125,28 @@ def process_anchor_holes(image_path, output_dir, prefix):
             cv2.circle(img, (x, y), r, (0, 255, 0), 2)  # Green circles for debugging
     
     # Save the processed image with marked anchor holes
-    output_path = os.path.join(output_dir, f"{prefix}_anchor_holes_marked.png")
-    cv2.imwrite(output_path, img)
+    output_path = OUTPUT_DIR / f"{prefix}_anchor_holes_marked.png"
+    cv2.imwrite(str(output_path), img)
     print(f"Saved anchor hole analysis to {output_path}")
 
 if __name__ == "__main__":
-    base_dir = "/Users/bradleygeiser/Documents/Bertie"
-    
-    # Process both images
+    # Define images to process
     images = [
         ("TheAstonishingOfAPenAndInkPuppet_0010.png", "main"),
         ("annotated_cutout_sheet (1).png", "annotated")
     ]
     
     for image_file, prefix in images:
-        image_path = os.path.join(base_dir, image_file)
-        output_dir = os.path.join(base_dir, "Bertie Assets", "bones")
+        image_path = PROJECT_ROOT / image_file
         
+        if not image_path.exists():
+            print(f"Warning: Image file not found: {image_path}")
+            continue
+            
         print(f"Processing {image_file}...")
-        analyze_and_cut_parts(image_path, output_dir, prefix)
-        process_anchor_holes(image_path, output_dir, prefix)
+        try:
+            analyze_and_cut_parts(image_path, prefix)
+            process_anchor_holes(image_path, prefix)
+        except Exception as e:
+            print(f"Error processing {image_file}: {str(e)}")
+            continue

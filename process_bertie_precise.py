@@ -3,41 +3,57 @@ import cv2
 import numpy as np
 import os
 from PIL import Image
+from pathlib import Path
 
-def precise_cut_parts(image_path, output_dir, prefix):
+# Configuration
+PROJECT_ROOT = Path(__file__).parent
+OUTPUT_DIR = PROJECT_ROOT / "Bertie Assets" / "bones"
+
+# Precise region definitions based on actual layout
+PRECISE_REGIONS = {
+    1: (0.02, 0.02, 0.28, 0.32),    # Head (top left)
+    2: (0.32, 0.02, 0.36, 0.32),    # Torso (top center)
+    3: (0.70, 0.02, 0.28, 0.18),    # Right Upper Arm (top right)
+    4: (0.70, 0.22, 0.28, 0.18),    # Right Lower Arm (top right, below)
+    5: (0.02, 0.36, 0.28, 0.18),    # Left Upper Arm (middle left)
+    6: (0.02, 0.56, 0.28, 0.18),    # Left Lower Arm (middle left, below)
+    7: (0.32, 0.36, 0.36, 0.22),    # Right Upper Leg (center)
+    8: (0.32, 0.60, 0.36, 0.22),    # Right Lower Leg + Foot (center, below)
+    9: (0.70, 0.42, 0.28, 0.25),    # Left Upper Leg (right side)
+    10: (0.70, 0.69, 0.28, 0.25)    # Left Lower Leg + Foot (right side, below)
+}
+
+def validate_image_path(image_path):
+    """Validate that the image file exists and is readable"""
+    if not Path(image_path).exists():
+        raise FileNotFoundError(f"Image file not found: {image_path}")
+    
+    try:
+        img = cv2.imread(str(image_path))
+        if img is None:
+            raise ValueError(f"Could not read image file: {image_path}")
+        return img
+    except Exception as e:
+        raise ValueError(f"Error loading image {image_path}: {str(e)}")
+def precise_cut_parts(image_path, prefix, regions=None):
     """
     More precise cutting based on the actual layout visible in the annotated sheet
-    """
-    # Load the image
-    img = cv2.imread(image_path)
-    if img is None:
-        print(f"Error: Could not load {image_path}")
-        return
     
+    Args:
+        image_path: Path to input image
+        prefix: Prefix for output files
+        regions: Custom region definitions (optional)
+    """
+    # Validate and load image
+    img = validate_image_path(image_path)
     height, width = img.shape[:2]
     print(f"Processing {image_path}: {width}x{height}")
     
-    # Based on the annotated sheet layout, I can see:
-    # Top row: Head (1), Torso (2), Right arm segments (3,4)
-    # Middle row: Left arm segments (5,6), Right leg segments (7,8)
-    # Bottom row: Left leg segments (9,10) and some additional pieces
+    # Use default or custom regions
+    regions = regions or PRECISE_REGIONS
     
-    # More precise region definitions based on the actual layout
-    regions = {
-        1: (0.02, 0.02, 0.28, 0.32),    # Head (top left)
-        2: (0.32, 0.02, 0.36, 0.32),    # Torso (top center)
-        3: (0.70, 0.02, 0.28, 0.18),    # Right Upper Arm (top right)
-        4: (0.70, 0.22, 0.28, 0.18),    # Right Lower Arm (top right, below)
-        5: (0.02, 0.36, 0.28, 0.18),    # Left Upper Arm (middle left)
-        6: (0.02, 0.56, 0.28, 0.18),    # Left Lower Arm (middle left, below)
-        7: (0.32, 0.36, 0.36, 0.22),    # Right Upper Leg (center)
-        8: (0.32, 0.60, 0.36, 0.22),    # Right Lower Leg + Foot (center, below)
-        9: (0.70, 0.42, 0.28, 0.25),    # Left Upper Leg (right side)
-        10: (0.70, 0.69, 0.28, 0.25)    # Left Lower Leg + Foot (right side, below)
-    }
-    
-    # Create output directory
-    os.makedirs(output_dir, exist_ok=True)
+    # Ensure output directory exists
+    OUTPUT_DIR.mkdir(parents=True, exist_ok=True)
     
     # Cut each part with better edge detection
     for part_num, (x_pct, y_pct, w_pct, h_pct) in regions.items():
@@ -78,19 +94,23 @@ def precise_cut_parts(image_path, output_dir, prefix):
             part = part[y:y+h, x:x+w]
         
         # Save the part
-        output_path = os.path.join(output_dir, f"{prefix}_part_{part_num:02d}_precise.png")
-        cv2.imwrite(output_path, part)
+        output_path = OUTPUT_DIR / f"{prefix}_part_{part_num:02d}_precise.png"
+        cv2.imwrite(str(output_path), part)
         print(f"Saved precise part {part_num} to {output_path}")
 
-def process_anchor_holes_advanced(image_path, output_dir, prefix):
+def process_anchor_holes_advanced(image_path, prefix, min_radius=3, max_radius=20, edge_density_threshold=0.1):
     """
     Advanced anchor hole processing - eliminate paper but preserve ink that impedes holes
+    
+    Args:
+        image_path: Path to input image
+        prefix: Prefix for output files
+        min_radius: Minimum anchor hole radius
+        max_radius: Maximum anchor hole radius
+        edge_density_threshold: Threshold for detecting ink in holes
     """
-    # Load the image
-    img = cv2.imread(image_path)
-    if img is None:
-        print(f"Error: Could not load {image_path}")
-        return
+    # Validate and load image
+    img = validate_image_path(image_path)
     
     # Convert to grayscale
     gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
@@ -159,23 +179,28 @@ def process_anchor_holes_advanced(image_path, output_dir, prefix):
                 cv2.circle(processed_img, (x, y), r, (0, 255, 0), 2)  # Green for clean holes
     
     # Save the processed image
-    output_path = os.path.join(output_dir, f"{prefix}_anchor_holes_processed.png")
-    cv2.imwrite(output_path, processed_img)
+    output_path = OUTPUT_DIR / f"{prefix}_anchor_holes_processed.png"
+    cv2.imwrite(str(output_path), processed_img)
     print(f"Saved processed anchor holes to {output_path}")
 
 if __name__ == "__main__":
-    base_dir = "/Users/bradleygeiser/Documents/Bertie"
-    
-    # Process both images with precise cutting
+    # Define images to process
     images = [
         ("TheAstonishingOfAPenAndInkPuppet_0010.png", "main"),
         ("annotated_cutout_sheet (1).png", "annotated")
     ]
     
     for image_file, prefix in images:
-        image_path = os.path.join(base_dir, image_file)
-        output_dir = os.path.join(base_dir, "Bertie Assets", "bones")
+        image_path = PROJECT_ROOT / image_file
         
+        if not image_path.exists():
+            print(f"Warning: Image file not found: {image_path}")
+            continue
+            
         print(f"\n=== Processing {image_file} ===")
-        precise_cut_parts(image_path, output_dir, prefix)
-        process_anchor_holes_advanced(image_path, output_dir, prefix)
+        try:
+            precise_cut_parts(image_path, prefix)
+            process_anchor_holes_advanced(image_path, prefix)
+        except Exception as e:
+            print(f"Error processing {image_file}: {str(e)}")
+            continue
